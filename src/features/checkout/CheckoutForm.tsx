@@ -33,7 +33,7 @@ export function CheckoutForm({ products, stripeEnabled, paystackEnabled }: { pro
     setShippingLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/checkout/shipping", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ address: { customerName: "Checkout recipient", customerEmail: "checkout@example.com", phone: "0000000000", country: nextCountry, addressLine1: "Address", city: "City", region: nextRegion, postalCode: nextPostalCode }, subtotalMinor: subtotal, currency }) });
+      const response = await fetch("/api/checkout/shipping", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ country: nextCountry, region: nextRegion, postalCode: nextPostalCode, items: cart.items, currency }) });
       const result = await response.json() as { methods?: typeof shippingMethods; error?: string };
       if (!response.ok || !result.methods) throw new Error(result.error ?? "Shipping options could not be loaded.");
       setShippingMethods(result.methods); setShippingMethodId(result.methods[0]?.id ?? "");
