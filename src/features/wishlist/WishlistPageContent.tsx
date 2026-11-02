@@ -29,6 +29,9 @@ export function WishlistPageContent({
       <Container>
         <p className="eyebrow">MALYK / Saved</p>
         <h1 className="shop-page__title">Your wishlist</h1>
+        <p className="wishlist-count" aria-live="polite">
+          {savedProducts.length} {savedProducts.length === 1 ? "piece" : "pieces"} saved
+        </p>
         <p className="demo-disclaimer">
           Saved in this browser only. Wishlist items are not synchronized
           between devices or accounts.

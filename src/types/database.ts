@@ -19,6 +19,7 @@ export type Database = {
           id: string;
           display_name: string;
           phone: string;
+          avatar_url: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -26,12 +27,14 @@ export type Database = {
           id: string;
           display_name?: string;
           phone?: string;
+          avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           display_name?: string;
           phone?: string;
+          avatar_url?: string | null;
           updated_at?: string;
         };
         Relationships: [];
@@ -331,6 +334,18 @@ export type Database = {
         Update: Record<string, never>;
         Relationships: [];
       };
+      wishlist_items: {
+        Row: { user_id: string; product_id: string; created_at: string };
+        Insert: { user_id: string; product_id: string; created_at?: string };
+        Update: never;
+        Relationships: [];
+      };
+      product_reviews: {
+        Row: { id: string; product_id: string; user_id: string; rating: number; title: string; body: string; status: "pending" | "approved" | "rejected" | "hidden"; verified_purchase: boolean; created_at: string; updated_at: string };
+        Insert: { id?: string; product_id: string; user_id: string; rating: number; title?: string; body: string; status?: "pending" | "approved" | "rejected" | "hidden"; verified_purchase?: boolean; created_at?: string; updated_at?: string };
+        Update: { product_id?: string; user_id?: string; rating?: number; title?: string; body?: string; status?: "pending" | "approved" | "rejected" | "hidden"; verified_purchase?: boolean; updated_at?: string };
+        Relationships: [];
+      };
       payment_records: {
         Row: { id: string; order_id: string; provider: "stripe" | "paystack"; provider_reference: string | null; status: "pending" | "processing" | "succeeded" | "cancelled" | "failed" | "refunded"; amount_minor: number; currency_code: string; verified_at: string | null; raw_event_id: string | null; created_at: string; updated_at: string };
         Insert: { id?: string; order_id: string; provider: "stripe" | "paystack"; provider_reference?: string | null; status?: "pending" | "processing" | "succeeded" | "cancelled" | "failed" | "refunded"; amount_minor: number; currency_code: string; verified_at?: string | null; raw_event_id?: string | null; created_at?: string; updated_at?: string };
@@ -340,6 +355,8 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      delete_my_account: { Args: Record<PropertyKey, never>; Returns: undefined };
+      product_has_verified_purchase: { Args: { p_product_id: string }; Returns: boolean };
       is_admin: {
         Args: Record<PropertyKey, never>;
         Returns: boolean;

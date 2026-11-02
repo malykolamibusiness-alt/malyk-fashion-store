@@ -16,16 +16,16 @@ export function HeroSection() {
       />
       <div className="home-hero__scrim" aria-hidden="true" />
       <Container className="home-hero__content">
-        <p className="eyebrow">MALYK / Modern dressing</p>
-        <h1 id="home-hero-title">A New Perspective on Modern Dressing.</h1>
+        <p className="eyebrow">MALYK / The new collection</p>
+        <h1 id="home-hero-title">Modern Expression.<br />Timeless Presence.</h1>
         <p>
-          Considered silhouettes. Timeless essentials. A wardrobe shaped by
-          individuality.
+          Refined silhouettes and exacting details, composed for a confident
+          international wardrobe.
         </p>
         <div className="home-hero__actions">
-          <Button href="/collections/the-malyk-edit">Discover the Collection</Button>
-          <Button href="/collections/new-arrivals" variant="secondary">
-            Explore New Arrivals
+          <Button href="/collections/men">Shop Men</Button>
+          <Button href="/collections/women" variant="secondary">
+            Shop Women
           </Button>
         </div>
       </Container>

@@ -1,11 +1,11 @@
 import type { NavigationItem } from "@/types/navigation";
 
 export const mainNavigation: NavigationItem[] = [
-  { href: "/collections/new-arrivals", label: "New arrivals" },
+  { href: "/collections/new-arrivals", label: "New Arrivals" },
   { href: "/collections/men", label: "Men" },
   { href: "/collections/women", label: "Women" },
-  { href: "/collections/accessories", label: "Accessories" },
-  { href: "/collections/the-malyk-edit", label: "Collections" },
+  { href: "/shop", label: "Clothing" },
+  { href: "/collections/accessories", label: "Bags & Accessories" },
 ];
 
 export const footerNavigation: NavigationItem[] = [

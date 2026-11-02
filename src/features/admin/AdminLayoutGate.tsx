@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/server";
+import { AdminNavigation } from "@/features/admin/AdminNavigation";
 
 export async function AdminLayoutGate({
   children,
@@ -29,11 +30,7 @@ export async function AdminLayoutGate({
           MALYK
         </Link>
         <p className="eyebrow">Studio</p>
-        <nav>
-          <Link href="/admin">Overview</Link>
-          <Link href="/admin/products">Products</Link>
-          <Link href="/admin/products/new">Add product</Link>
-        </nav>
+        <AdminNavigation />
         <Link className="admin-sidebar__storefront" href="/">
           Return to storefront
         </Link>

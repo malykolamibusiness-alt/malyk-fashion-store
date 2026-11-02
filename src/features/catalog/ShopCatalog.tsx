@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ProductCard } from "@/components/home/ProductCard";
 import { Button } from "@/components/ui/Button";
@@ -68,6 +69,7 @@ export function ShopCatalog({
   const requestedCurrency = getParam(searchParams, "currency");
   const sort = parseSortOption(getParam(searchParams, "sort"));
   const [priceError, setPriceError] = useState("");
+  const [searchInput, setSearchInput] = useState(search);
   const appliedMinPrice = getParam(searchParams, "min");
   const appliedMaxPrice = getParam(searchParams, "max");
   const availableCurrencies = useMemo(
@@ -94,11 +96,22 @@ export function ShopCatalog({
   useEffect(() => {
     function syncQueryAfterHistoryNavigation() {
       latestQueryRef.current = window.location.search.slice(1);
+      setSearchInput(getParam(new URLSearchParams(window.location.search), "search"));
     }
     window.addEventListener("popstate", syncQueryAfterHistoryNavigation);
     return () =>
       window.removeEventListener("popstate", syncQueryAfterHistoryNavigation);
   }, []);
+
+  useEffect(() => {
+    if (searchInput === search) return;
+    const timeout = window.setTimeout(() => {
+      updateUrl({ search: searchInput.trim() });
+    }, 350);
+    return () => window.clearTimeout(timeout);
+    // updateUrl intentionally reads the latest URL from its ref.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput]);
 
   function updateUrl(updates: Record<string, string>) {
     const params = new URLSearchParams(latestQueryRef.current);
@@ -284,9 +297,17 @@ export function ShopCatalog({
   return (
     <main id="main-content" className="catalog-page shop-page">
       <Container className="catalog-page__intro">
-        <p className="eyebrow">MALYK / Shop</p>
-        <h1 className="shop-page__title">{title}</h1>
+        <nav className="catalog-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span aria-hidden="true">/</span>
+          <span aria-current="page">Shop</span>
+        </nav>
+        <p className="eyebrow">The MALYK collection</p>
+        <h1 className="shop-page__title">{title === "The Collection" ? "Discover the Collection." : title}</h1>
         <p className="shop-page__description">{description}</p>
+        <p className="catalog-intro-count" aria-live="polite">
+          {filteredProducts.length} {filteredProducts.length === 1 ? "piece" : "pieces"} available
+        </p>
         {demoCatalog ? (
           <p className="demo-disclaimer">
             Development demonstration catalog only. This is not live
@@ -306,6 +327,21 @@ export function ShopCatalog({
       </Container>
 
       <Container>
+        {showCategoryFilter ? (
+          <nav className="catalog-category-tabs" aria-label="Shop by category">
+            {categoryOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={category === option.value ? "is-active" : undefined}
+                aria-current={category === option.value ? "true" : undefined}
+                onClick={() => changeFilter("category", option.value === "all" ? "" : option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </nav>
+        ) : null}
         <div className="catalog-toolbar">
           <p className="catalog-result-count" aria-live="polite">
             {filteredProducts.length}{" "}
@@ -335,19 +371,31 @@ export function ShopCatalog({
               <h2>Refine</h2>
               <button type="button" onClick={clearFilters}>Clear all</button>
             </div>
-            <form
-              className="catalog-search"
-              key={search}
-              onSubmit={applySearch}
-            >
-              <label>
+            <form className="catalog-search" onSubmit={applySearch}>
+              <label htmlFor="catalog-search-input">
                 <span>Search products</span>
-                <input
-                  defaultValue={search}
-                  name="search"
-                  placeholder="Name, category, collection"
-                  type="search"
-                />
+                <span className="catalog-search__field">
+                  <input
+                    id="catalog-search-input"
+                    value={searchInput}
+                    name="search"
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder="Name or description"
+                    type="search"
+                  />
+                  {searchInput ? (
+                    <button
+                      type="button"
+                      aria-label="Clear product search"
+                      onClick={() => {
+                        setSearchInput("");
+                        updateUrl({ search: "" });
+                      }}
+                    >
+                      ×
+                    </button>
+                  ) : null}
+                </span>
               </label>
               <button className="button button--secondary" type="submit">
                 Search

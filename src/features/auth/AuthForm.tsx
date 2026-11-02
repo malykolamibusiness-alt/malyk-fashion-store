@@ -1,8 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import {
+  discordOAuthAction,
+  googleOAuthAction,
   registerAction,
   signInAction,
   type AuthActionState,
@@ -19,9 +22,27 @@ export function AuthForm({ mode, nextPath = "/account" }: AuthFormProps) {
   const action = mode === "register" ? registerAction : signInAction;
   const [state, formAction, isPending] = useActionState(action, initialState);
   const isRegister = mode === "register";
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   return (
-    <form className="account-form" action={formAction}>
+    <>
+      <div className="account-oauth">
+        <form action={googleOAuthAction}>
+          <input type="hidden" name="next" value={nextPath} />
+          <button className="button button--secondary" type="submit">
+            Continue with Google
+          </button>
+        </form>
+        <form action={discordOAuthAction}>
+          <input type="hidden" name="next" value={nextPath} />
+          <button className="button button--secondary" type="submit">
+            Continue with Discord
+          </button>
+        </form>
+      </div>
+      <p className="account-form__divider"><span>or continue with email</span></p>
+      <form className="account-form" action={formAction}>
       {isRegister ? (
         <label>
           <span>Name</span>
@@ -43,27 +64,31 @@ export function AuthForm({ mode, nextPath = "/account" }: AuthFormProps) {
           type="email"
         />
       </label>
-      <label>
+      <label className="account-password-field">
         <span>Password</span>
-        <input
-          autoComplete={isRegister ? "new-password" : "current-password"}
-          minLength={isRegister ? 8 : undefined}
-          maxLength={72}
-          name="password"
-          required
-          type="password"
-        />
+        <span className="account-password-control">
+          <input
+            autoComplete={isRegister ? "new-password" : "current-password"}
+            minLength={isRegister ? 8 : undefined}
+            maxLength={72}
+            name="password"
+            required
+            type={showPassword ? "text" : "password"}
+          />
+          <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Hide password" : "Show password"} aria-pressed={showPassword}>
+            {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+          </button>
+        </span>
       </label>
       {isRegister ? (
-        <label>
+        <label className="account-password-field">
           <span>Confirm password</span>
-          <input
-            autoComplete="new-password"
-            maxLength={72}
-            name="confirmPassword"
-            required
-            type="password"
-          />
+          <span className="account-password-control">
+            <input autoComplete="new-password" maxLength={72} name="confirmPassword" required type={showConfirmation ? "text" : "password"} />
+            <button type="button" onClick={() => setShowConfirmation((visible) => !visible)} aria-label={showConfirmation ? "Hide confirmation password" : "Show confirmation password"} aria-pressed={showConfirmation}>
+              {showConfirmation ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </span>
         </label>
       ) : null}
       <input type="hidden" name="next" value={nextPath} />
@@ -88,8 +113,9 @@ export function AuthForm({ mode, nextPath = "/account" }: AuthFormProps) {
             ? "Create account"
             : "Sign in"}
       </button>
+      {!isRegister ? <Link className="account-form__forgot" href="/forgot-password">Forgot password?</Link> : null}
       <p className="account-form__switch">
-        {isRegister ? "Already have an account?" : "New to MALYK?"}{" "}
+        {isRegister ? "Already have an account?" : "New to MALYK?"} {" "}
         <Link
           href={
             isRegister
@@ -100,6 +126,7 @@ export function AuthForm({ mode, nextPath = "/account" }: AuthFormProps) {
           {isRegister ? "Sign in" : "Create an account"}
         </Link>
       </p>
-    </form>
+      </form>
+    </>
   );
 }

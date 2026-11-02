@@ -1,8 +1,10 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { Minus, Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { formatPrice } from "@/data/products";
@@ -21,7 +23,10 @@ export function CartPageContent({
   catalogError,
 }: CartPageContentProps) {
   const cart = useCart();
+  const router = useRouter();
   const [message, setMessage] = useState("");
+  const [removedMessage, setRemovedMessage] = useState("");
+  const quantityLock = useRef(false);
   const productById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products],
@@ -35,19 +40,26 @@ export function CartPageContent({
       (candidate) => candidate.id === item.colorId,
     );
     const image = product?.images[0];
-    return product && variant && color
+    const availableStock = variant?.available ? variant.stockQuantity : 0;
+    const hasValidColor =
+      (product?.availableColors.length ?? 0) === 0 || Boolean(color);
+    const isValid = Boolean(product && variant && variant.available && availableStock > 0 && hasValidColor);
+    const stockIssue = availableStock < item.quantity ? availableStock : null;
+    return product && variant
       ? {
           item,
           product,
           variant,
           color,
           image,
+          isValid,
+          stockIssue,
           lineTotalMinor: product.priceMinor * item.quantity,
         }
-      : { item, product: null, variant: null, color: null, image: null };
+      : { item, product: null, variant: null, color: null, image: null, isValid: false, stockIssue: null };
   });
   const totals = lines.reduce<Map<string, number>>((accumulator, line) => {
-    if (line.product && "lineTotalMinor" in line) {
+    if (line.product && line.isValid && "lineTotalMinor" in line) {
       accumulator.set(
         line.product.currency,
         (accumulator.get(line.product.currency) ?? 0) + line.lineTotalMinor,
@@ -56,7 +68,11 @@ export function CartPageContent({
     return accumulator;
   }, new Map());
 
+  const hasInvalidItems = lines.some((line) => !line.isValid);
+
   function changeQuantity(variantId: string, quantity: number) {
+    if (quantityLock.current) return;
+    quantityLock.current = true;
     try {
       cart.updateQuantity(variantId, quantity);
       setMessage("");
@@ -66,14 +82,29 @@ export function CartPageContent({
           ? error.message
           : "Quantity could not be updated.",
       );
+    } finally {
+      quantityLock.current = false;
     }
   }
 
   return (
     <main id="main-content" className="cart-page">
       <Container>
-        <p className="eyebrow">MALYK / Your bag</p>
-        <h1 className="shop-page__title">Your shopping bag</h1>
+        <nav className="cart-breadcrumb" aria-label="Breadcrumb">
+          <Link href="/">Home</Link>
+          <span aria-hidden="true">/</span>
+          <span>Your shopping bag</span>
+        </nav>
+        <div className="cart-page__heading">
+          <div>
+            <p className="eyebrow">MALYK / Your bag</p>
+            <h1 className="shop-page__title">Your shopping bag.</h1>
+          </div>
+          <Link href="/shop" className="cart-continue-link">Continue shopping</Link>
+        </div>
+        <p className="cart-item-count" aria-live="polite">
+          {cart.itemCount} {cart.itemCount === 1 ? "item" : "items"}
+        </p>
         <p className="demo-disclaimer">
           Your bag stores product and variant references only. Prices below
           come from the current catalog and are informational; the server
@@ -116,10 +147,12 @@ export function CartPageContent({
                             sizes="160px"
                             unoptimized={line.product.isDemo === false}
                           />
-                        ) : null}
+                        ) : (
+                          <span className="cart-image-placeholder">MALYK</span>
+                        )}
                       </Link>
                     ) : (
-                      <div className="cart-line__image-link" aria-hidden="true" />
+                      <div className="cart-line__image-link cart-image-placeholder" aria-hidden="true">MALYK</div>
                     )}
                     <div className="cart-line__details">
                       {line.product ? (
@@ -138,47 +171,50 @@ export function CartPageContent({
                       )}
                       {line.product ? (
                         <p>
-                          {formatPrice(
-                            line.product.priceMinor,
-                            line.product.currency,
-                          )}{" "}
-                          each
+                          {formatPrice(line.product.priceMinor, line.product.currency)} each
                         </p>
+                      ) : null}
+                      {line.product && line.variant && (!line.variant.available || line.stockIssue !== null) ? (
+                        <p className="cart-line__warning" role="status">
+                          {                          line.variant.available
+                            ? `Only ${line.variant.stockQuantity} available. Reduce your quantity before checkout.`
+                            : "This size and color combination is currently unavailable."}
+                        </p>
+                      ) : null}
+                      {line.product && !line.variant ? (
+                        <p className="cart-line__warning" role="status">This variant is no longer available.</p>
                       ) : null}
                       <div className="cart-line__actions">
                         {line.product && line.variant ? (
-                          <label>
-                            <span>Quantity</span>
-                            <select
-                              value={line.item.quantity}
-                              onChange={(event) =>
-                                changeQuantity(
-                                  line.item.variantId,
-                                  Number(event.target.value),
-                                )
-                              }
-                            >
-                              {Array.from(
-                                {
-                                  length: Math.min(
-                                    line.variant.stockQuantity,
-                                    99,
-                                  ),
-                                },
-                                (_, index) => index + 1,
-                              ).map((quantity) => (
-                                <option key={quantity} value={quantity}>
-                                  {quantity}
-                                </option>
-                              ))}
-                            </select>
-                          </label>
+                          <div className="cart-quantity" aria-label="Quantity">
+                            <span className="cart-quantity__label">Quantity</span>
+                            <div className="cart-quantity__controls">
+                              <button
+                                type="button"
+                                aria-label={`Decrease quantity of ${line.product.name}`}
+                                disabled={line.item.quantity <= 1 || !line.variant.available}
+                                onClick={() => changeQuantity(line.item.variantId, line.item.quantity - 1)}
+                              >
+                                <Minus size={14} aria-hidden="true" />
+                              </button>
+                              <span aria-live="polite">{line.item.quantity}</span>
+                              <button
+                                type="button"
+                                aria-label={`Increase quantity of ${line.product.name}`}
+                                disabled={!line.variant.available || line.item.quantity >= Math.min(line.variant.stockQuantity, 99)}
+                                onClick={() => changeQuantity(line.item.variantId, line.item.quantity + 1)}
+                              >
+                                <Plus size={14} aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
                         ) : null}
                         <button
                           type="button"
-                          onClick={() =>
-                            cart.removeItem(line.item.variantId)
-                          }
+                          onClick={() => {
+                            cart.removeItem(line.item.variantId);
+                            setRemovedMessage(`${line.product?.name ?? "Item"} removed from your bag.`);
+                          }}
                         >
                           Remove
                         </button>
@@ -196,9 +232,10 @@ export function CartPageContent({
                 ))}
               </ul>
               {message ? (
-                <p className="cart-feedback" role="alert">
-                  {message}
-                </p>
+                <p className="cart-feedback" role="alert">{message}</p>
+              ) : null}
+              {removedMessage ? (
+                <p className="cart-feedback" role="status">{removedMessage}</p>
               ) : null}
               <button
                 className="cart-clear"
@@ -224,7 +261,17 @@ export function CartPageContent({
                 Shipping and tax are confirmed securely on the checkout
                 server before payment.
               </p>
-              <Button href="/checkout">Proceed to checkout</Button>
+              {hasInvalidItems ? (
+                <p className="cart-summary__warning" role="alert">
+                  Remove unavailable items or adjust quantities before checkout.
+                </p>
+              ) : null}
+              <Button
+                disabled={cart.items.length === 0 || hasInvalidItems}
+                onClick={() => router.push("/checkout")}
+              >
+                Proceed to checkout
+              </Button>
               <Link href="/shop">Continue shopping</Link>
             </aside>
           </div>

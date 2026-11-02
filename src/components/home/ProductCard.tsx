@@ -46,7 +46,11 @@ export function ProductCard({
               unoptimized={product.isDemo === false}
               sizes="(max-width: 560px) 50vw, (max-width: 900px) 33vw, 25vw"
             />
-          ) : null}
+          ) : (
+            <span className="product-card__image-placeholder" role="img" aria-label={`${product.name} image coming soon`}>
+              MALYK
+            </span>
+          )}
         </Link>
         {product.isNewArrival ? (
           <span className="product-card__badge">New arrival</span>

@@ -26,6 +26,8 @@ export function ProductSection({
   variant = "standard",
   prioritizeFirstImage = false,
 }: ProductSectionProps) {
+  if (products.length === 0) return null;
+
   return (
     <section
       className={`home-section product-section product-section--${variant}`}

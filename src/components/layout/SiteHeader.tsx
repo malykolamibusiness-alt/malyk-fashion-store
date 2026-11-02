@@ -1,18 +1,28 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Heart, Menu, Search, ShoppingBag, UserRound, X } from "lucide-react";
 import Link from "next/link";
-import { BrandWordmark } from "@/components/BrandWordmark";
+import { usePathname } from "next/navigation";
 import { IconButton } from "@/components/ui/IconButton";
 import { useCart } from "@/features/cart/CartProvider";
 import { useWishlist } from "@/features/wishlist/WishlistProvider";
 import { mainNavigation } from "@/lib/navigation";
 
 export function SiteHeader() {
+  return (
+    <Suspense fallback={<div className="site-header" aria-label="Loading navigation" />}>
+      <SiteHeaderContent />
+    </Suspense>
+  );
+}
+
+function SiteHeaderContent() {
   const [menuOpen, setMenuOpen] = useState(false);
   const cart = useCart();
   const wishlist = useWishlist();
+  const pathname = usePathname();
+  const isActive = (href: string) => href !== "/shop" && pathname.startsWith(href);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -39,16 +49,15 @@ export function SiteHeader() {
         </div>
 
         <Link className="site-header__brand" href="/" aria-label="MALYK home">
-          <BrandWordmark />
+          MALYK
         </Link>
 
         <nav className="desktop-navigation" aria-label="Main navigation">
           {mainNavigation.map((item) => (
-            <Link href={item.href} key={item.label}>
+            <Link href={item.href} key={item.label} aria-current={isActive(item.href) ? "page" : undefined}>
               {item.label}
             </Link>
           ))}
-          <Link href="/shop">Shop all</Link>
         </nav>
 
         <div className="site-header__actions">
@@ -85,10 +94,11 @@ export function SiteHeader() {
         aria-label="Mobile navigation"
         aria-hidden={!menuOpen}
       >
-        {[...mainNavigation, { href: "/shop", label: "Shop all" }].map((item) => (
+        {[...mainNavigation].map((item) => (
           <Link
             href={item.href}
             key={item.label}
+            aria-current={isActive(item.href) ? "page" : undefined}
             onClick={() => setMenuOpen(false)}
             tabIndex={menuOpen ? 0 : -1}
           >

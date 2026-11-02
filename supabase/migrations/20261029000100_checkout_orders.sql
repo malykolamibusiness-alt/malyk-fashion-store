@@ -136,13 +136,13 @@ declare
 begin
   if v_user_id is null then
     raise exception 'Authenticated checkout is required';
-  end;
+  end if;
   if char_length(p_idempotency_key) < 16 or char_length(p_idempotency_key) > 128 then
     raise exception 'Invalid idempotency key';
-  end;
+  end if;
   if p_provider not in ('stripe', 'paystack') then
     raise exception 'Unsupported payment provider';
-  end;
+  end if;
 
   select id into v_order_id from public.orders
   where idempotency_key = p_idempotency_key and user_id = v_user_id;
@@ -150,7 +150,7 @@ begin
 
   if jsonb_typeof(p_items) <> 'array' or jsonb_array_length(p_items) = 0 or jsonb_array_length(p_items) > 50 then
     raise exception 'Invalid checkout items';
-  end;
+  end if;
 
   for v_item in select value from jsonb_array_elements(p_items)
   loop
@@ -172,7 +172,7 @@ begin
     end if;
     if v_product.currency_code <> v_currency then
       raise exception 'Mixed checkout currencies are not supported';
-    end;
+    end if;
     v_subtotal := v_subtotal + v_product.price_minor * (v_item->>'quantity')::integer;
     v_total_items := v_total_items + 1;
 
@@ -180,7 +180,7 @@ begin
       set stock_quantity = stock_quantity - (v_item->>'quantity')::integer
       where id = v_product.variant_id
         and active and stock_quantity >= (v_item->>'quantity')::integer;
-    if not found then raise exception 'Stock changed before checkout completed'; end;
+    if not found then raise exception 'Stock changed before checkout completed'; end if;
   end loop;
 
   if v_subtotal <> p_subtotal_minor or

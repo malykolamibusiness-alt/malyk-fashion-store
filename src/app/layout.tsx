@@ -44,14 +44,15 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#111111",
-  colorScheme: "light",
+  themeColor: "#080808",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
       className={`${editorialSerif.variable} ${interfaceSans.variable}`}
     >

@@ -7,8 +7,8 @@ export function BrandStatement() {
         <p className="eyebrow">The MALYK point of view</p>
         <h2 id="brand-statement-title">Less, But Considered.</h2>
         <p>
-          MALYK brings together modern silhouettes and thoughtful design for a
-          wardrobe that moves confidently across seasons.
+          MALYK is guided by restraint, proportion, and enduring craft—a
+          wardrobe that moves confidently across seasons and borders.
         </p>
       </Container>
     </section>

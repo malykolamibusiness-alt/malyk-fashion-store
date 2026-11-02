@@ -9,6 +9,9 @@ import { ProductOptions } from "@/components/home/ProductOptions";
 import { Container } from "@/components/ui/Container";
 import { demoProducts, formatPrice } from "@/data/products";
 import { getStorefrontProduct } from "@/lib/catalog";
+import { createClient } from "@/lib/supabase/server";
+import { hasSupabaseEnvironment } from "@/lib/supabase/env";
+import { ProductReviews, type ProductReview } from "@/features/reviews/ProductReviews";
 
 type ProductPageProps = {
   params: Promise<{ slug: string }>;
@@ -61,6 +64,31 @@ async function ProductContent({ params }: ProductPageProps) {
     .filter((candidate) => candidate.id !== product.id && candidate.category === product.category)
     .slice(0, 4);
 
+  let reviews: ProductReview[] = [];
+  let signedIn = false;
+  let eligible = false;
+  if (hasSupabaseEnvironment()) {
+    try {
+      const supabase = await createClient();
+      const { data: reviewsData } = await supabase
+        .from("product_reviews")
+        .select("id, rating, title, body, verified_purchase, created_at")
+        .eq("product_id", product.id)
+        .eq("status", "approved")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      reviews = reviewsData ?? [];
+      const { data: userData } = await supabase.auth.getUser();
+      signedIn = Boolean(userData.user);
+      if (userData.user) {
+        const { data: eligibleData } = await supabase.rpc("product_has_verified_purchase", { p_product_id: product.id });
+        eligible = eligibleData === true;
+      }
+    } catch (error) {
+      console.warn("MALYK product reviews could not be loaded.", error);
+    }
+  }
+
   return (
     <main id="main-content" className="product-detail-page">
       <Container>
@@ -93,8 +121,13 @@ async function ProductContent({ params }: ProductPageProps) {
                 Development demonstration product. This is not live inventory.
               </p>
             ) : null}
-            <p>{product.description}</p>
             <ProductOptions product={product} />
+            {product.description ? (
+              <details className="product-detail__accordion" open>
+                <summary>Description</summary>
+                <p>{product.description}</p>
+              </details>
+            ) : null}
             <WishlistToggle productId={product.id} productName={product.name} />
             <p className="product-detail__footnote">
               Availability comes from the current catalog and may change.
@@ -102,6 +135,13 @@ async function ProductContent({ params }: ProductPageProps) {
             </p>
           </div>
         </div>
+        <ProductReviews
+          productId={product.id}
+          productSlug={product.slug}
+          reviews={reviews}
+          signedIn={signedIn}
+          eligible={eligible}
+        />
       </Container>
       {relatedProducts.length ? (
         <section className="related-products" aria-labelledby="related-title">

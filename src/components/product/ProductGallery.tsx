@@ -14,13 +14,24 @@ export function ProductGallery({
   unoptimized?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const selectedImage = images[selectedIndex];
-  if (!selectedImage) return null;
+  const selectedImage = images[selectedIndex] ?? images[0];
+  if (!selectedImage) {
+    return (
+      <div className="product-gallery">
+        <div className="product-gallery__placeholder" role="img" aria-label={`No image available for ${productName}`}>
+          <span>MALYK</span>
+          <small>Image unavailable</small>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="product-gallery">
       <div className="product-detail__image">
         <Image
+          key={selectedImage.src}
+          className="product-gallery__main-image"
           src={selectedImage.src}
           alt={selectedImage.alt}
           fill

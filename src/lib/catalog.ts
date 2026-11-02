@@ -150,8 +150,9 @@ function unavailableResult(error: string): CatalogResult {
 }
 
 export async function getStorefrontCatalog(): Promise<CatalogResult> {
+  if (isDemoCatalogEnabled()) return demoResult();
+
   if (!hasSupabaseEnvironment()) {
-    if (isDemoCatalogEnabled()) return demoResult();
     return unavailableResult(
       "The store catalog is not configured yet. Add the Supabase project settings or explicitly enable the development demo catalog.",
     );

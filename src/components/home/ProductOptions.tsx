@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Minus, Plus } from "lucide-react";
+import { useRef, useState } from "react";
 import { findVariant } from "@/data/products";
 import { useCart } from "@/features/cart/CartProvider";
 import type { Product } from "@/types/product";
@@ -18,9 +19,14 @@ export function ProductOptions({
   const [colorId, setColorId] = useState("");
   const [quantity, setQuantity] = useState(1);
   const [message, setMessage] = useState("");
-  const { addItem } = useCart();
+  const addingRef = useRef(false);
+  const { addItem, items } = useCart();
+  const requiresSize = product.availableSizes.length > 0;
+  const requiresColor = product.availableColors.length > 0;
   const selectedVariant =
-    size && colorId ? findVariant(product, size, colorId) : undefined;
+    (!requiresSize || size) && (!requiresColor || colorId)
+      ? findVariant(product, size, colorId)
+      : undefined;
   const sizesInSelectedColor = new Set(
     product.variants
       .filter(
@@ -41,18 +47,30 @@ export function ProductOptions({
       )
       .map((variant) => variant.colorId),
   );
+  const alreadyInBag = selectedVariant
+    ? items.filter((item) => item.variantId === selectedVariant.id)
+        .reduce((total, item) => total + item.quantity, 0)
+    : 0;
+  const remainingStock = selectedVariant
+    ? Math.max(0, selectedVariant.stockQuantity - alreadyInBag)
+    : 0;
+  const maximumQuantity = Math.min(99, remainingStock);
 
   function handleAdd() {
     if (!selectedVariant) {
-      setMessage("Choose an available size and color before adding this item.");
+      const missing = [
+        requiresSize && !size ? "size" : "",
+        requiresColor && !colorId ? "color" : "",
+      ].filter(Boolean).join(" and ");
+      setMessage(`Choose an available ${missing || "option"} before adding this item.`);
       return;
     }
-    if (quantity > selectedVariant.stockQuantity) {
-      setMessage(
-        `Only ${selectedVariant.stockQuantity} units are currently listed for this option.`,
-      );
+    if (quantity > remainingStock) {
+      setMessage(`Only ${remainingStock} additional units are available for this option.`);
       return;
     }
+    if (addingRef.current) return;
+    addingRef.current = true;
 
     try {
       addItem({
@@ -62,20 +80,31 @@ export function ProductOptions({
         colorId,
         quantity,
       });
-      setMessage(`${product.name} (${size}) added to your bag.`);
+      const selection = [
+        size,
+        requiresColor
+          ? product.availableColors.find((color) => color.id === colorId)?.name
+          : "",
+      ].filter(Boolean).join(" · ");
+      setMessage(`${product.name}${selection ? ` (${selection})` : ""} added to your bag.`);
     } catch (error) {
       setMessage(
         error instanceof Error
           ? error.message
-          : "This demonstration option could not be added.",
+          : "This item could not be added to your bag.",
       );
+    } finally {
+      window.setTimeout(() => {
+        addingRef.current = false;
+      }, 350);
     }
   }
 
   return (
     <div className={`product-options${compact ? " product-options--compact" : ""}`}>
+      {requiresSize ? (
       <fieldset className="product-options__fieldset">
-        <legend>Size</legend>
+        <legend>Size{size ? `: ${size}` : ""}</legend>
         <div className="variant-options">
           {product.availableSizes.map((availableSize) => {
             const unavailable = !sizesInSelectedColor.has(availableSize);
@@ -87,6 +116,7 @@ export function ProductOptions({
                 key={availableSize}
                 onClick={() => {
                   setSize(availableSize);
+                  setQuantity(1);
                   setMessage("");
                 }}
                 type="button"
@@ -98,7 +128,9 @@ export function ProductOptions({
           })}
         </div>
       </fieldset>
+      ) : null}
 
+      {requiresColor ? (
       <fieldset className="product-options__fieldset">
         <legend>
           Color{colorId ? `: ${product.availableColors.find((color) => color.id === colorId)?.name ?? ""}` : ""}
@@ -115,6 +147,7 @@ export function ProductOptions({
                 key={color.id}
                 onClick={() => {
                   setColorId(color.id);
+                  setQuantity(1);
                   setMessage("");
                 }}
                 style={{ backgroundColor: color.value }}
@@ -126,38 +159,50 @@ export function ProductOptions({
           })}
         </div>
       </fieldset>
+      ) : null}
 
       {selectedVariant ? (
         <p className="variant-stock" role="status">
-          {selectedVariant.stockQuantity} units currently listed for this option.
-          Availability is checked again before checkout.
+          {remainingStock > 0
+            ? `${remainingStock} additional units available.`
+            : "This option is currently unavailable."}
         </p>
-      ) : null}
+      ) : (
+        <p className="variant-stock">Select the available options to check inventory.</p>
+      )}
 
-      <label className="quantity-label">
-        <span>Quantity</span>
-        <input
-          aria-label={`Quantity for ${product.name}`}
-          max={selectedVariant?.stockQuantity ?? 1}
-          min={1}
-          onChange={(event) => {
-            const nextQuantity = Number(event.target.value);
-            if (Number.isInteger(nextQuantity) && nextQuantity >= 1) {
-              setQuantity(nextQuantity);
-            }
-          }}
-          type="number"
-          value={quantity}
-        />
-      </label>
+      <div className="quantity-label">
+        <span id={`${product.id}-quantity-label`}>Quantity</span>
+        <div className="quantity-control">
+          <button type="button" aria-label="Decrease quantity" disabled={quantity <= 1} onClick={() => setQuantity((current) => Math.max(1, current - 1))}>
+            <Minus aria-hidden="true" />
+          </button>
+          <input
+            aria-labelledby={`${product.id}-quantity-label`}
+            max={maximumQuantity || 1}
+            min={1}
+            onChange={(event) => {
+              const nextQuantity = Number(event.target.value);
+              if (Number.isInteger(nextQuantity)) {
+                setQuantity(Math.min(Math.max(1, nextQuantity), maximumQuantity || 1));
+              }
+            }}
+            type="number"
+            value={quantity}
+          />
+          <button type="button" aria-label="Increase quantity" disabled={!maximumQuantity || quantity >= maximumQuantity} onClick={() => setQuantity((current) => Math.min(maximumQuantity, current + 1))}>
+            <Plus aria-hidden="true" />
+          </button>
+        </div>
+      </div>
 
       <button
         className="button button--primary product-options__add"
-        disabled={!selectedVariant}
+        disabled={Boolean(selectedVariant && remainingStock < 1)}
         onClick={handleAdd}
         type="button"
       >
-        Add to bag
+        {selectedVariant && remainingStock < 1 ? "Unavailable" : "Add to bag"}
       </button>
       <p className="product-option-message" role="status" aria-live="polite">
         {message}

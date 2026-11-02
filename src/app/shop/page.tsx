@@ -24,8 +24,16 @@ export default function ShopPage() {
   return (
     <Suspense
       fallback={
-        <main className="catalog-page">
-          <h1 className="catalog-loading-title">The Collection</h1>
+        <main className="catalog-page" aria-busy="true" aria-label="Loading catalog">
+          <div className="container catalog-loading">
+            <h1 className="catalog-loading-title">Discover the Collection.</h1>
+            <div className="catalog-loading__tabs" aria-hidden="true">
+              {Array.from({ length: 5 }, (_, index) => <span key={index} />)}
+            </div>
+            <div className="catalog-loading__grid" aria-hidden="true">
+              {Array.from({ length: 8 }, (_, index) => <span key={index} />)}
+            </div>
+          </div>
         </main>
       }
     >

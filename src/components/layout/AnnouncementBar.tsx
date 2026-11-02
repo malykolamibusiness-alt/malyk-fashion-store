@@ -3,7 +3,7 @@ type AnnouncementBarProps = {
 };
 
 export function AnnouncementBar({
-  message = "Discover the new collection",
+  message = "Discover the latest MALYK collection",
 }: AnnouncementBarProps) {
   return (
     <div className="announcement-bar">

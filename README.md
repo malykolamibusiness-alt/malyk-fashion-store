@@ -30,7 +30,7 @@ product management, follow [SUPABASE_SETUP.md](./SUPABASE_SETUP.md).
 - `/admin` — administrator dashboard
 - `/admin/products` — administrator product management
 - `/cart`, `/wishlist` — browser-persisted product and variant references
-- `/checkout` — server-authoritative checkout and hosted payment flow
+- `/checkout` — checkout preview; orders and payments are not enabled
 - `/design-system` — internal design-system preview
 
 The browser cart stores product/variant identifiers and quantities only.
@@ -61,6 +61,5 @@ stripping used by the small configuration/redirect tests.
 - `supabase/tests/` — pgTAP row-level security tests
 - `tests/` — Node.js unit tests
 
-Orders and checkout require the Supabase migrations and server-side provider
-credentials described in [SUPABASE_SETUP.md](./SUPABASE_SETUP.md). Live payment
-activation must be completed and tested separately.
+Orders, checkout, payment processing, and stock reservation are intentionally
+not part of this phase.
