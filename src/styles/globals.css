@@ -3007,6 +3007,21 @@ textarea[aria-invalid="true"] {
 .account-oauth form,
 .account-oauth button {
   width: 100%;
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ gap: 0.65rem;
+}
+
+.account-oauth__github,
+.account-oauth__x {
+ display: inline-grid;
+ place-items: center;
+ width: 1.125rem;
+ height: 1.125rem;
+ font-size: 0.9rem;
+ font-weight: 700;
+ line-height: 1;
 }
 
 .account-form__divider {

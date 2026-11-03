@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSiteUrl, safeRedirectPath } from "@/lib/auth/redirect";
@@ -145,7 +146,7 @@ export async function signInAction(
 }
 
 export async function oauthSignInAction(
-  provider: "google" | "discord",
+  provider: "google" | "discord" | "github" | "twitter",
   nextPath = "/account",
 ): Promise<never> {
   const { client, error } = await getAuthClient();
@@ -164,7 +165,13 @@ export async function oauthSignInAction(
   });
   if (oauthError || !data.url) {
     console.error("MALYK OAuth sign-in failed.", oauthError, { provider });
-    throw new Error(`Could not start ${provider === "google" ? "Google" : "Discord"} sign-in.`);
+    const providerName = {
+      google: "Google",
+      discord: "Discord",
+      github: "GitHub",
+      twitter: "X",
+    }[provider];
+    throw new Error(`Could not start ${providerName} sign-in.`);
   }
   redirect(data.url);
 }
@@ -175,6 +182,14 @@ export async function googleOAuthAction(formData: FormData): Promise<never> {
 
 export async function discordOAuthAction(formData: FormData): Promise<never> {
   return oauthSignInAction("discord", safeRedirectPath(formData.get("next"), "/account"));
+}
+
+export async function githubOAuthAction(formData: FormData): Promise<never> {
+  return oauthSignInAction("github", safeRedirectPath(formData.get("next"), "/account"));
+}
+
+export async function twitterOAuthAction(formData: FormData): Promise<never> {
+  return oauthSignInAction("twitter", safeRedirectPath(formData.get("next"), "/account"));
 }
 
 export async function requestPasswordResetAction(
@@ -268,6 +283,7 @@ export async function uploadAvatarAction(
     .update({ avatar_url: data.publicUrl })
     .eq("id", user.id);
   if (error) return { error: "The avatar was uploaded, but your profile could not be updated." };
+  revalidatePath("/account");
   return { success: "Your avatar has been updated." };
 }
 
@@ -279,6 +295,7 @@ export async function removeAvatarAction(): Promise<void> {
   }
   const { error } = await supabase.from("profiles").update({ avatar_url: null }).eq("id", user.id);
   if (error) throw new Error("Your avatar could not be removed.");
+  revalidatePath("/account");
   redirect("/account");
 }
 
@@ -312,5 +329,6 @@ export async function updateProfileAction(
     console.error("MALYK profile update failed.", error);
     return { error: "Your profile could not be updated. Please try again." };
   }
+  revalidatePath("/account");
   return { success: "Your profile has been updated." };
 }

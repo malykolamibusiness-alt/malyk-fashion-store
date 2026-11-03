@@ -5,7 +5,9 @@ import { useActionState, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import {
   discordOAuthAction,
+  githubOAuthAction,
   googleOAuthAction,
+  twitterOAuthAction,
   registerAction,
   signInAction,
   type AuthActionState,
@@ -38,6 +40,18 @@ export function AuthForm({ mode, nextPath = "/account" }: AuthFormProps) {
           <input type="hidden" name="next" value={nextPath} />
           <button className="button button--secondary" type="submit">
             Continue with Discord
+          </button>
+        </form>
+        <form action={githubOAuthAction}>
+          <input type="hidden" name="next" value={nextPath} />
+          <button className="button button--secondary" type="submit">
+            <span aria-hidden="true" className="account-oauth__github">GH</span> Continue with GitHub
+          </button>
+        </form>
+        <form action={twitterOAuthAction}>
+          <input type="hidden" name="next" value={nextPath} />
+          <button className="button button--secondary" type="submit">
+            <span aria-hidden="true" className="account-oauth__x">X</span> Continue with X
           </button>
         </form>
       </div>
