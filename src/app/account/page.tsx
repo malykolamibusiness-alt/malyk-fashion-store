@@ -1,6 +1,9 @@
+export const instant = false;
+
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import Link from "next/link";
+import { connection } from "next/server";
 import { formatPrice } from "@/data/products";
 import { Container } from "@/components/ui/Container";
 import { AccountProfileForm } from "@/features/auth/AccountProfileForm";
@@ -17,6 +20,7 @@ type AccountPageProps = {
 };
 
 async function AccountContent({ searchParams }: AccountPageProps) {
+  await connection();
   const params = await searchParams;
   const { supabase, user } = await requireUser("/account");
   const { data: profile, error } = await supabase

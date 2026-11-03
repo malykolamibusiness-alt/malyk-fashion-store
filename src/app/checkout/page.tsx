@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import { Container } from "@/components/ui/Container";
 import { requireUser } from "@/lib/auth/server";
 import { getStorefrontCatalog } from "@/lib/catalog";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
+  await connection();
   await requireUser("/checkout");
   const catalog = await getStorefrontCatalog();
   return (
